@@ -1,0 +1,5 @@
+# 核心流水线（scripts/*.py）全部为 Python 标准库实现，无必装依赖。
+#
+# 可选依赖：
+py7zr>=0.20        # 解包 .7z 压缩包（.zip/.tar.gz 用标准库，.rar 需系统装 7-Zip/WinRAR）
+mcp[cli]>=1.2.0    # 仅 MCP 服务模式（mcp_server.py）需要

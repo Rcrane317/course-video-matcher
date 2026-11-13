@@ -331,17 +331,35 @@ def _pdf_cli():
     return None
 
 
-def pdf_text(path, max_pages=8):
-    """借 workbuddy-pdf 抽文本；拿不到就返回空（退化为文件名推断）。"""
+def _pdf_extractor():
+    """返回 ("workbuddy-pdf"|"pdftotext", cli路径) 或 None。通用环境优先 poppler 的 pdftotext。"""
     cli = _pdf_cli()
-    if not cli:
+    if cli:
+        return ("workbuddy-pdf", cli)
+    pt = shutil.which("pdftotext")
+    if pt:
+        return ("pdftotext", pt)
+    return None
+
+
+def pdf_text(path, max_pages=8):
+    """抽 PDF 文本（workbuddy-pdf 或 pdftotext）；都没有就返回空（退化为文件名推断）。"""
+    ext_pair = _pdf_extractor()
+    if not ext_pair:
         return ""
+    kind, cli = ext_pair
     tmp = Path(tempfile.mkdtemp(prefix="cvm-pdf-"))
     out = tmp / "out.txt"
     try:
-        subprocess.run([cli, str(path), str(out), "--format", "txt"],
-                       check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                       timeout=180)
+        if kind == "pdftotext":
+            subprocess.run([cli, "-f", "1", "-l", str(max_pages),
+                            str(path), str(out)],
+                           check=True, stdout=subprocess.DEVNULL,
+                           stderr=subprocess.DEVNULL, timeout=180)
+        else:
+            subprocess.run([cli, str(path), str(out), "--format", "txt"],
+                           check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                           timeout=180)
         raw = out.read_text("utf-8", errors="ignore")
     except (subprocess.SubprocessError, OSError):
         return ""

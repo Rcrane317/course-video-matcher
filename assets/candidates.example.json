@@ -1,0 +1,266 @@
+{
+  "meta": {
+    "platform_scope": "bilibili",
+    "searched_at": "2026-11-13",
+    "note": "示例数据，链接均为真实 B站 稿件。s3 故意放一个不存在的 BV，用来演示「已删除/不可见」会被剔除；o2 的简介里有网盘提取码，用来演示弱信号只提示不误杀。拿 `--mode crash` 再跑一遍，可以看到排序按「突击」口径重排。",
+    "field_help": {
+      "kind": "collection=完整合集/长系列；snippet=只讲一个知识点的单集",
+      "status": "complete=已更新完；updating=还在更（会被丢弃）；unknown=判不出（保留但降级）",
+      "free": "true=免费可看；false=付费/购课（会被丢弃）；null=没确认（保留但打标）",
+      "evidence": "page=打开过播放列表页核实；snippet=只看到搜索摘要",
+      "llm_score": "你的语义判断，0-100，锚点见 references/scoring.md",
+      "total_minutes": "整门总时长（分钟）。不填则用 episodes × 单集时长 估算；突击模式下它直接决定排序"
+    }
+  },
+  "courses": [
+    {
+      "course_id": "c02",
+      "course_name": "数据结构",
+      "identity": {
+        "课程": "数据结构",
+        "推断教材": "《数据结构》严蔚敏 第2版",
+        "口径": "按知识点对齐，不强求章号一致"
+      },
+      "series": [
+        {
+          "id": "s1",
+          "title": "27考研408数据结构基础阶段完整版精讲课程（零基础可看）！！",
+          "url": "https://www.bilibili.com/video/BV1zUzfBwEy3",
+          "uploader": "哈喜老师",
+          "kind": "collection",
+          "episodes": 34,
+          "status": "complete",
+          "free": true,
+          "official": false,
+          "desc": "按章节顺序讲，第一章到第八章，共 34 个分P",
+          "total_minutes": 1489
+        },
+        {
+          "id": "s2",
+          "title": "【拯救者】数据结构速成 (期末+考研+专升本 均适用) (含整套考题讲解)4K画质",
+          "url": "https://www.bilibili.com/video/BV1z84y1z7Vp",
+          "uploader": "编程张无忌",
+          "kind": "collection",
+          "episodes": 24,
+          "status": "complete",
+          "free": true,
+          "official": false,
+          "desc": "期末突击向，每章先讲基础再讲配套习题",
+          "total_minutes": 177
+        },
+        {
+          "id": "s3",
+          "title": "数据结构 全程班（失效链接演示）",
+          "url": "https://www.bilibili.com/video/BV1zz411c7XX",
+          "uploader": "某课堂",
+          "kind": "collection",
+          "episodes": 40,
+          "status": "complete",
+          "free": true,
+          "official": false,
+          "desc": "这条 BV 已不存在，用来验证删除检测",
+          "total_minutes": 2400
+        }
+      ],
+      "matches": [
+        {
+          "deck_name": "第1章 绪论.pptx",
+          "lecture_label": "绪论 数据结构基本概念",
+          "topics": [
+            "数据结构",
+            "逻辑结构",
+            "存储结构"
+          ],
+          "picks": [
+            {
+              "series_id": "s1",
+              "episode": "P2 第一章-1",
+              "url": "https://www.bilibili.com/video/BV1zUzfBwEy3?p=2",
+              "duration_min": 29,
+              "evidence": "page",
+              "llm_score": 90,
+              "note": "分P只写「第一章-1」，已打开确认是该章第一节"
+            },
+            {
+              "series_id": "s2",
+              "episode": "P2 Ep_绪论",
+              "url": "https://www.bilibili.com/video/BV1z84y1z7Vp?p=2",
+              "duration_min": 7,
+              "evidence": "page",
+              "llm_score": 58,
+              "note": "7 分钟速成版，只能当预习"
+            }
+          ]
+        },
+        {
+          "deck_name": "第2章 线性表.pptx",
+          "lecture_label": "线性表 顺序表 链表",
+          "topics": [
+            "线性表",
+            "顺序表",
+            "链表"
+          ],
+          "picks": [
+            {
+              "series_id": "s1",
+              "episode": "P5 第二章-1 线性表的特性",
+              "url": "https://www.bilibili.com/video/BV1zUzfBwEy3?p=5",
+              "duration_min": 28,
+              "evidence": "page",
+              "llm_score": 92
+            }
+          ]
+        },
+        {
+          "deck_name": "第3章 栈和队列.pptx",
+          "lecture_label": "栈和队列",
+          "topics": [
+            "栈",
+            "队列",
+            "LIFO",
+            "FIFO"
+          ],
+          "picks": [
+            {
+              "series_id": "s1",
+              "episode": "P10 第三章-1 栈的操作和性质",
+              "url": "https://www.bilibili.com/video/BV1zUzfBwEy3?p=10",
+              "duration_min": 52,
+              "evidence": "page",
+              "llm_score": 84,
+              "note": "这一P只讲栈，队列在后面几P，需要连看"
+            }
+          ]
+        },
+        {
+          "deck_name": "第4章 串.pptx",
+          "lecture_label": "串 模式匹配 KMP",
+          "topics": [
+            "串",
+            "KMP",
+            "模式匹配"
+          ],
+          "picks": [
+            {
+              "series_id": "s3",
+              "episode": "P12 第四章 串",
+              "url": "https://www.bilibili.com/video/BV1zz411c7XX?p=12",
+              "duration_min": 45,
+              "evidence": "snippet",
+              "llm_score": 88,
+              "note": "这条会被删除检测拦掉，于是本讲变成未找到"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "course_id": "c01",
+      "course_name": "操作系统",
+      "identity": {
+        "课程": "操作系统",
+        "授课教师": "张三",
+        "学校": "清华大学",
+        "口径": "按讲对齐"
+      },
+      "series": [
+        {
+          "id": "o1",
+          "title": "408操作系统强化课(25版,24年录制)",
+          "url": "https://www.bilibili.com/video/BV1jTXQYyEG7",
+          "uploader": "Beokayy_",
+          "kind": "collection",
+          "episodes": 6,
+          "status": "complete",
+          "free": true,
+          "official": false,
+          "desc": "去年的课程免费公开，共 6 个分P，11 小时",
+          "total_minutes": 660
+        },
+        {
+          "id": "o2",
+          "title": "考研408-题型强化与总结(合集篇)---包括数据结构，组成原理，操作系统，计网",
+          "url": "https://www.bilibili.com/video/BV1Ke411P7h4",
+          "uploader": "凌老司",
+          "kind": "collection",
+          "episodes": 36,
+          "status": "complete",
+          "free": true,
+          "official": false,
+          "desc": "配套讲义下载如下 链接: https://pan.baidu.com/s/xxxx 提取码:abcd",
+          "total_minutes": 303
+        }
+      ],
+      "matches": [
+        {
+          "deck_name": "第1讲 操作系统引论.pptx",
+          "lecture_label": "操作系统引论 目标与作用",
+          "topics": [
+            "操作系统",
+            "引论",
+            "目标"
+          ],
+          "picks": [
+            {
+              "series_id": "o1",
+              "episode": "P1 1 概述",
+              "url": "https://www.bilibili.com/video/BV1jTXQYyEG7?p=1",
+              "duration_min": 60,
+              "evidence": "page",
+              "llm_score": 88
+            },
+            {
+              "series_id": "o2",
+              "episode": "P1 考研408-题型强化与总结(合集篇)---绪论",
+              "url": "https://www.bilibili.com/video/BV1Ke411P7h4?p=1",
+              "duration_min": 2,
+              "evidence": "page",
+              "llm_score": 56,
+              "note": "2 分钟题型串讲，不是正课"
+            }
+          ]
+        },
+        {
+          "deck_name": "第2讲 进程管理.pptx",
+          "lecture_label": "进程管理 进程 线程 调度",
+          "topics": [
+            "进程",
+            "线程",
+            "调度",
+            "PCB"
+          ],
+          "picks": [
+            {
+              "series_id": "o1",
+              "episode": "P3 3 进程与线程",
+              "url": "https://www.bilibili.com/video/BV1jTXQYyEG7?p=3",
+              "duration_min": 112,
+              "evidence": "page",
+              "llm_score": 90
+            }
+          ]
+        },
+        {
+          "deck_name": "第3讲 内存管理.pptx",
+          "lecture_label": "内存管理 分页 分段 虚拟内存",
+          "topics": [
+            "内存管理",
+            "分页",
+            "分段",
+            "虚拟内存"
+          ],
+          "picks": [
+            {
+              "series_id": "o1",
+              "episode": "P4 4 内存管理",
+              "url": "https://www.bilibili.com/video/BV1jTXQYyEG7?p=4",
+              "duration_min": 165,
+              "evidence": "page",
+              "llm_score": 86
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

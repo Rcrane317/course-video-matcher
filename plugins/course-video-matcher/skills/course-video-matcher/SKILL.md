@@ -8,12 +8,26 @@ metadata:
   description_zh: "用户上传大学课程 PPT/PDF 压缩包合集后，自动解包、识别课程与章节目录，只在 B站 检索对应网课：支持全程网课与突击网课两种模式，按视频标题关键词归类；剔除广告卖课、只留免费且已更新完毕的，逐条核验是否已被删除、分P是否存在、实际是否付费，按匹配度从高到低列出全部候选，产出带可点击链接的单文件 HTML。"
   description_en: "Unpack lecture-deck archives and search Bilibili only for free, fully-published series. Two selectable modes - full course vs. crash course - change both the query set and the score weighting. Ad-driven clips are filtered, every link is probed against Bilibili's public API, and all candidates are ranked in a self-contained HTML report."
   category: "education"
-  version: "2.3.0"
+  version: "3.0.0"
 ---
 
 # 课件网课匹配（B站版）
 
 把「一堆看不清结构的课件压缩包」变成「第几章该看哪个视频、链接在哪、还有哪些备选、这条有多可信」。
+
+## 适用环境（通用版）
+
+本 skill 是**平台无关**的开放格式，只要 agent 满足以下条件即可使用：
+
+1. 能运行 Python 3.8+（脚本全部为标准库实现，`.7z` 解包需要可选装 `py7zr`）；
+2. 能联网搜索（最好支持域名限定，例如搜索参数 `allowed_domains: ["bilibili.com"]`；不支持就在检索词后拼 `site:bilibili.com`）；
+3. 能读写本地文件。
+
+三种接入方式任选其一：
+
+- **Agent Skill**：把本目录（含 SKILL.md）放进任何支持 Agent Skills 规范的 agent（Claude Code、Claude 桌面/网页版上传项目、其它兼容实现），agent 会按本文件执行；
+- **MCP 服务**：运行 `mcp_server.py`（见仓库 README），任何 MCP 客户端（Claude Desktop、Cursor、Cline 等）可直接调用四个流水线工具；
+- **纯 CLI**：不用 agent，手动跑 `scripts/` 下的脚本（检索与 `candidates.json` 的语义判断部分需自行完成）。
 
 ## 硬口径（用户已明确要求，不能自行放宽）
 
@@ -73,7 +87,7 @@ metadata:
 
 ## 交付物
 
-工作区建 `网课匹配_<YYYYMMDD>/`：
+在用户工作区建 `网课匹配_<YYYYMMDD>/`：
 
 | 文件                | 内容                               | 谁生成             |
 | ----------------- | -------------------------------- | --------------- |
@@ -86,8 +100,10 @@ metadata:
 
 ## 执行流程
 
+脚本路径相对本 SKILL.md 所在目录：
+
 ```bash
-SKILL=~/.workbuddy/skills/course-video-matcher   # Windows: C:\Users\<你>\.workbuddy\skills\course-video-matcher
+SKILL="<本 SKILL.md 所在目录>"   # 仓库根目录或安装后的 skill 目录
 ```
 
 ### Phase 0　解包与清点
@@ -124,7 +140,7 @@ python "$SKILL/scripts/materials.py" "<压缩包或文件夹>" --out "网课匹�
 
 **Stage A｜找合集（必做，且优先）**
 
-用域名限定把结果锁在 B站（`allowed_domains: ["bilibili.com"]`）。检索式**按模式分两套**，别混着搜：
+把搜索结果锁在 B站：搜索工具支持域名限定就用（如 `allowed_domains: ["bilibili.com"]`），不支持就在检索词后拼 `site:bilibili.com`，或直接用 B站 站内搜索。检索式**按模式分两套**，别混着搜：
 
 **全程模式（`full`）**
 
@@ -229,7 +245,7 @@ python "$SKILL/scripts/write_html.py" ".../alignment.json" -o ".../网课对照�
 4. **缺失清单 + 替代方案**：具体到「换什么词重搜」「看教材配套」「找同类课程替代」。
 5. **核验时间**：说明这是什么时候核验的，B站 上的资源随时可能下架。
 
-用 `present_files` 把 HTML 交给用户（HTML 会在预览面板直接打开）。
+最后把 HTML 文件交付给用户（所在平台支持文件预览/打开发布就预览展示，否则给出文件路径让用户自行打开）。
 
 ## 质量闸门
 
