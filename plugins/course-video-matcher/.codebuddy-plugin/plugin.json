@@ -1,0 +1,13 @@
+{
+  "name": "course-video-matcher",
+  "version": "2.1.0",
+  "description": "课件压缩包 → B站 网课逐讲对齐，逐条核验是否仍可观看",
+  "license": "MIT",
+  "keywords": [
+    "education",
+    "bilibili",
+    "course",
+    "video-matching"
+  ],
+  "category": "education"
+}

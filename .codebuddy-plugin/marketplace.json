@@ -1,0 +1,22 @@
+{
+  "name": "cvm-skills",
+  "description": "课件 ↔ 网课对齐相关技能",
+  "owner": {
+    "name": "course-video-matcher"
+  },
+  "plugins": [
+    {
+      "name": "course-video-matcher",
+      "source": "./plugins/course-video-matcher",
+      "description": "课件压缩包 → B站 网课逐讲对齐，逐条核验是否仍可观看",
+      "version": "2.1.0",
+      "category": "education",
+      "keywords": [
+        "education",
+        "bilibili",
+        "course",
+        "video-matching"
+      ]
+    }
+  ]
+}
