@@ -42,6 +42,23 @@ CN_STOP = re.compile(r"[第章节讲次课部分篇]")
 NOISE = re.compile(r"(课件|讲义|笔记|pptx|ppt|pdf|副本|final|v\d+|ok|new|改|终版)", re.I)
 OFFICIAL_HINTS = ("大学", "学院", "教育", "官方", "课程组", "教务处", "学堂", "慕课", "研究院")
 
+# ---------------------------------------------------------------- 模式
+# full  = 全程网课：跟着系统课从头学到尾，覆盖全、时长长
+# crash = 突击网课：考前速通，短、抓考点，允许覆盖不全
+MODE_FULL, MODE_CRASH = "full", "crash"
+MODE_LABEL = {MODE_FULL: "全程网课", MODE_CRASH: "突击网课"}
+
+CRASH_WORDS = ("速成", "突击", "冲刺", "串讲", "考点", "期末", "考前", "复习",
+               "救命", "速通", "浓缩", "划重点", "总结", "过一遍", "三天",
+               "小时讲完", "2小时", "3小时", "一小时")
+FULL_WORDS = ("完整版", "全集", "全程", "系统", "课堂", "录播", "详解",
+              "逐章", "配套教材", "第1讲", "第一讲", "零基础")
+
+# 标题命中关键词时，模式分直接拉到 ±LABEL_POINTS，足以压过语义分的差距；
+# 标题没有关键词时才退回体量判断，权重低得多（±AMBIG_POINTS）。
+LABEL_POINTS = 24
+AMBIG_POINTS = 10
+
 
 # ---------------------------------------------------------------- 相似度
 
@@ -179,7 +196,74 @@ def check_alive(url, probe, allow_unverified=False):
 
 # ---------------------------------------------------------------- 打分
 
-def score_pick(pick, match, series, deck):
+def est_total_minutes(series, pick):
+    """估算整门课的总时长（分钟）。优先用 series 显式值，否则用 集数×单集时长。"""
+    if isinstance(series.get("total_minutes"), (int, float)):
+        return float(series["total_minutes"])
+    ep = series.get("episodes")
+    dur = pick.get("duration_min")
+    if isinstance(dur, (int, float)):
+        if isinstance(ep, int) and ep >= 1:
+            return float(dur) * ep
+        return float(dur)
+    return None
+
+
+def bigness(total, ep):
+    """体量大小 0..1：时长占 6.5 成、集数占 3.5 成。只在标题没关键词时用。"""
+    if total is None:
+        s = 0.5
+    elif total >= 900:
+        s = 1.0
+    elif total >= 600:
+        s = 0.8
+    elif total >= 360:
+        s = 0.6
+    elif total >= 180:
+        s = 0.35
+    else:
+        s = 0.15
+    e = 1.0 if ep >= 20 else (0.8 if ep >= 10 else (0.5 if ep >= 5 else 0.2))
+    return round(0.65 * s + 0.35 * e, 3)
+
+
+def mode_fit(mode, series, pick):
+    """候选与所选模式的契合度、人话理由、以及要加的分。
+
+    判定顺序（按权重从高到低）：
+      1. 标题（含分P名）出现「突击/速成/期末…」→ 直接归到突击网课
+      2. 标题出现「完整版/全集/系统/课堂录播…」→ 直接归到全程网课
+      3. 都没有 → 才看体量：越长、集数越多越偏全程
+    这样时长不会盖过标题，只有标题看不出来时才由体量兜底。
+    """
+    title = " ".join(str(x) for x in (series.get("title"), pick.get("episode")) if x)
+    total = est_total_minutes(series, pick)
+    ep = series.get("episodes") or 1
+    crash_labeled = any(w in title for w in CRASH_WORDS)
+    full_labeled = any(w in title for w in FULL_WORDS)
+
+    if crash_labeled != full_labeled:          # 只命中一类，按关键词定死
+        bucket = MODE_CRASH if crash_labeled else MODE_FULL
+        hit = bucket == mode
+        word = "突击" if crash_labeled else "全程"
+        fit = 1.0 if hit else 0.0
+        points = LABEL_POINTS if hit else -LABEL_POINTS
+        note = f"标题含{word}类关键词 → 归为{word}网课"
+        if total:
+            note += f"；整门约 {total / 60:.1f} 小时（时长不参与这次的判定）"
+        return fit, points, note
+
+    # 没有关键词（或两类都有，视为矛盾）：退回体量
+    big = bigness(total, ep)
+    fit = big if mode == MODE_FULL else 1 - big
+    points = round((fit - 0.5) * 2 * AMBIG_POINTS, 1)
+    note = "标题没有明确的形态关键词，按体量判断"
+    if total:
+        note += f"：整门约 {total / 60:.1f} 小时、{ep} 集"
+    return fit, points, note
+
+
+def score_pick(pick, match, series, deck, mode=MODE_FULL):
     label = match.get("lecture_label") or deck["stem"]
     topics = match.get("topics") or []
     cand_text = " ".join(str(x) for x in (
@@ -210,12 +294,25 @@ def score_pick(pick, match, series, deck):
 
     auto = max(0.0, min(1.0, base + adjust)) * 100
     llm = pick.get("llm_score")
-    final = float(llm) if isinstance(llm, (int, float)) else auto
+    raw = float(llm) if isinstance(llm, (int, float)) else auto
+
+    # 语义分回答「是不是这门课的这一讲」，模式分回答「是不是你要的形态」
+    fit, pts, fit_note = mode_fit(mode, series, pick)
+    final = max(0.0, min(100.0, raw + pts))
+    # 形态不合（被扣分）但语义上确实是对的那一讲：兜底到 40，留作「弱匹配」。
+    # 否则某门课网上只有速成版时，全程模式会报「未找到」——明明有视频。
+    if pts < 0 and raw >= 55:
+        final = max(final, 40.0)
+    if pts:
+        reasons.append(f"{MODE_LABEL.get(mode, mode)}契合度 {fit:.2f}（{pts:+.1f} 分）")
     return {
         "final": round(final, 1),
         "auto": round(auto, 1),
         "lex": round(lex, 3),
         "topic_cov": round(topic_cov, 3),
+        "mode_fit": round(fit, 3),
+        "mode_points": pts,
+        "mode_note": fit_note,
         "disagreement": isinstance(llm, (int, float)) and abs(float(llm) - auto) > 35,
         "reasons": reasons,
     }
@@ -285,7 +382,7 @@ def validate(cand, materials):
 
 # ---------------------------------------------------------------- 主流程
 
-def align(materials, cand, keywords, probe=None, allow_unverified=False):
+def align(materials, cand, keywords, probe=None, allow_unverified=False, mode=MODE_FULL):
     by_id = {c["id"]: c for c in materials["courses"]}
     dropped = {"ad": 0, "paid": 0, "updating": 0, "other_platform": 0, "low_score": 0,
                "dead": 0, "mismatch": 0, "unverified": 0}
@@ -322,7 +419,7 @@ def align(materials, cand, keywords, probe=None, allow_unverified=False):
                 probed_dur = alive_info.get("real_duration")
                 if probed_dur and not p.get("duration_min"):
                     p = {**p, "duration_min": probed_dur}
-                sc = score_pick(p, m, s, deck)
+                sc = score_pick(p, m, s, deck, mode)
                 t, label = tier(sc["final"])
                 if t == "reject":
                     dropped["low_score"] += 1
@@ -346,6 +443,11 @@ def align(materials, cand, keywords, probe=None, allow_unverified=False):
                     "score": sc["final"],
                     "auto_score": sc["auto"],
                     "llm_score": p.get("llm_score"),
+                    "mode_fit": sc["mode_fit"],
+                    "mode_points": sc["mode_points"],
+                    "mode_note": sc["mode_note"],
+                    "total_hours": (round((est_total_minutes(s, p) or 0) / 60, 1)
+                                    if est_total_minutes(s, p) else None),
                     "tier": t,
                     "tier_label": label,
                     "disagreement": sc["disagreement"],
@@ -427,6 +529,8 @@ def align(materials, cand, keywords, probe=None, allow_unverified=False):
             "free_only": True,
             "complete_only": True,
             "collection_first": True,
+            "mode": mode,
+            "mode_label": MODE_LABEL.get(mode, mode),
             "alive_check": bool(probe),
             "allow_unverified": bool(allow_unverified),
             "ad_keywords": list(keywords or AD_KEYWORDS),
@@ -465,6 +569,8 @@ def main():
     ap.add_argument("--probe", help="probe.json 路径；给了就按「此刻是否还能看」过滤")
     ap.add_argument("--allow-unverified", action="store_true",
                     help="核验接口受限时仍保留（默认丢弃）")
+    ap.add_argument("--mode", choices=[MODE_FULL, MODE_CRASH], default=MODE_FULL,
+                    help="full=全程网课（默认，系统课优先）；crash=突击网课（冲刺速通优先）")
     args = ap.parse_args()
 
     keywords = ([k.strip() for k in args.ad_keywords.split(",") if k.strip()]
@@ -503,11 +609,12 @@ def main():
         for i in issues[:10]:
             print(f"  - {i}", file=sys.stderr)
 
-    result = align(mat, cand, keywords, probe, args.allow_unverified)
+    result = align(mat, cand, keywords, probe, args.allow_unverified, args.mode)
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
 
     s, fd = result["summary"], result["filters"]
+    print(f"模式：{result['policy']['mode_label']}（{args.mode}）—— 评分已按该形态加权")
     print(f"对齐完成：{s['course_count']} 门 / {s['deck_count']} 份讲义 / 覆盖 {s['coverage_pct']}%"
           f"（合集 {s['collection_covered']}，仅片段 {s['snippet_only']}，缺 {s['not_found']}）")
     print(f"过滤丢弃：广告 {fd.get('ad', 0)} · 付费 {fd.get('paid', 0)} · "

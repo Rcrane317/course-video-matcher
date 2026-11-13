@@ -9,7 +9,7 @@
       "name": "course-video-matcher",
       "source": "./plugins/course-video-matcher",
       "description": "课件压缩包 → B站 网课逐讲对齐，逐条核验是否仍可观看",
-      "version": "2.1.0",
+      "version": "2.3.0",
       "category": "education",
       "keywords": [
         "education",

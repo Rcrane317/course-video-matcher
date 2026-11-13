@@ -70,6 +70,9 @@ input[type=search]{min-width:220px;flex:1 1 220px;max-width:340px}
   margin:18px 0;overflow:hidden}
 .chead{padding:20px 22px 16px;border-bottom:1px solid var(--line2);background:#fbfcfd}
 .chead h2{margin:0;font-size:18px;font-weight:650;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mode-badge{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.4px;
+  background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);
+  color:#fff;border-radius:20px;padding:3px 12px;vertical-align:3px;margin-left:10px}
 .cid{font-size:11px;font-weight:500;color:var(--ink3);border:1px solid var(--line);
   border-radius:5px;padding:2px 7px;background:#fff}
 .ident{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
@@ -213,6 +216,8 @@ def option_html(o, deck_status):
         tags.append('<span class="tag col">完整合集</span>')
         if o.get("episodes"):
             tags.append(f'<span class="tag">共 {o["episodes"]} 集</span>')
+        if o.get("total_hours"):
+            tags.append(f'<span class="tag">整门 ≈{o["total_hours"]} 小时</span>')
         if o.get("series_status") == "complete":
             tags.append('<span class="tag">已完结</span>')
         elif o.get("series_status") == "unknown":
@@ -369,6 +374,12 @@ def build(alignment, title, sample=False):
 
     samplebar = ('<div class="samplebar">示例数据 · 链接指向真实 B站 视频，仅用于演示版式与交互（请勿当作选课建议）</div>'
                  if sample else "")
+    mode_now = pol.get("mode", "full")
+    read_hint = ("每一讲先看「完整合集」那一组——跟着同一个系列看到底，顺序和深度最接近课件；"
+                 "没有合集的讲才用「专题片段」补单点。"
+                 if mode_now == "full" else
+                 "突击模式下优先看整门体量小的冲刺课（几小时讲完那种）；"
+                 "同分时选总时长更短的，先过一遍框架，需要细节再回「全程」模式查。")
     alive_tag = "链接已逐条核验可播 · " if pol.get("alive_check") else ""
     return f'''<!DOCTYPE html>
 <html lang="zh-CN">
@@ -382,8 +393,8 @@ def build(alignment, title, sample=False):
 {samplebar}
 <header>
   <div class="wrap">
-    <h1>课件 ↔ 网课对照表</h1>
-    <p class="sub">检索口径：仅 B站 · 只看免费 · 只收已更新完毕 · 已剔除广告卖课 · 合集优先 · 按匹配度降序 · {alive_tag}生成于 {E(alignment.get("generated_at", "")[:16].replace("T", " "))}</p>
+    <h1>课件 ↔ 网课对照表<span class="mode-badge">{E(pol.get("mode_label", "全程网课"))}</span></h1>
+    <p class="sub">检索口径：仅 B站 · 只看免费 · 只收已更新完毕 · 已剔除广告卖课 · {E(pol.get("mode_label", "全程网课"))}优先 · 按匹配度降序 · {alive_tag}生成于 {E(alignment.get("generated_at", "")[:16].replace("T", " "))}</p>
     <div class="stats">{stat_html}</div>
   </div>
 </header>
@@ -414,7 +425,7 @@ def build(alignment, title, sample=False):
   </div>
 {body}
   <footer>
-    <b>怎么读这张表</b>：每一讲先看「完整合集」那一组——跟着同一个系列看，顺序和深度最接近；没有合集时才用「专题片段」补单点。<br>
+    <b>怎么读这张表</b>：{read_hint}<br>
     <b>过滤了什么</b>：{E(filtered)}。广告词表：{E("、".join(pol.get("ad_keywords", [])[:12]))} 等。<br>
     {alive_line}
     <b>可信度</b>：「已核实页面」= 打开过播放列表确认了分P；「仅搜索摘要」= 只看到搜索结果标题，点开前请对一下章名。<br>

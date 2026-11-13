@@ -1,15 +1,15 @@
 ---
 name: course-video-matcher
-description: "Match an uploaded pile of university lecture decks (PPT/PDF inside zip/7z/rar archives, often several courses at once) to real Bilibili course videos. Scope is locked to bilibili.com; ads and paid-course funnels are filtered out, only free and fully-published series are kept, every link is probed against Bilibili's public API so deleted or missing-part videos are dropped, complete playlists are preferred over single-topic clips, and every qualifying candidate is listed by descending match score. Outputs a single self-contained HTML report with clickable links and verification timestamps."
+description: "Match an uploaded pile of university lecture decks (PPT/PDF inside zip/7z/rar archives, often several courses at once) to real Bilibili course videos. Scope is locked to bilibili.com; ads and paid-course funnels are filtered out, only free and fully-published series are kept, every link is probed against Bilibili's public API so deleted or missing-part videos are dropped, complete playlists are preferred over single-topic clips, every qualifying candidate is listed by descending match score, and a full-course vs. crash-course mode switches what counts as a good match."
 license: MIT
 metadata:
   display_name: "课件网课匹配"
   display_name_en: "Course Deck to Bilibili Course Matcher"
-  description_zh: "用户上传大学课程 PPT/PDF 压缩包合集后，自动解包、识别课程与章节目录，只在 B站 检索对应网课：剔除广告卖课、只留免费且已更新完毕的，并逐条核验视频是否已被删除、分P是否存在、实际是否付费，合集优先、无合适合集才退到专题片段，按匹配度从高到低列出全部候选，产出带可点击链接的单文件 HTML。"
-  version: "2.1.0"
-  category: education
+  description_zh: "用户上传大学课程 PPT/PDF 压缩包合集后，自动解包、识别课程与章节目录，只在 B站 检索对应网课：支持全程网课与突击网课两种模式，按视频标题关键词归类；剔除广告卖课、只留免费且已更新完毕的，逐条核验是否已被删除、分P是否存在、实际是否付费，按匹配度从高到低列出全部候选，产出带可点击链接的单文件 HTML。"
+  description_en: "Unpack lecture-deck archives and search Bilibili only for free, fully-published series. Two selectable modes - full course vs. crash course - change both the query set and the score weighting. Ad-driven clips are filtered, every link is probed against Bilibili's public API, and all candidates are ranked in a self-contained HTML report."
+  category: "education"
+  version: "2.3.0"
 ---
-
 
 # 课件网课匹配（B站版）
 
@@ -25,6 +25,7 @@ metadata:
 | 完整性 | 只收**已更新完毕**的合集；「持续更新中」「未完待续」的丢弃            |
 | 优先级 | **先找完整合集**；某一讲确实没有合适合集时，才去搜专题片段补点          |
 | 存活  | **只收此刻还能看的**：逐条请求 B站 稿件接口确认。已删除、私密/审核中、分P不存在、实际付费、标题与站内对不上的，一律剔除 |
+| 模式  | 先确认用户要**全程网课**（系统学完）还是**突击网课**（考前速通）。归类以**标题关键词**为准，体量只做兜底。没说就默认全程 |
 | 排序  | 每讲按匹配度**从高到低列出全部符合条件的候选**，让用户自己选，不做只给一个的截断 |
 | 产物  | 单个自包含 HTML，所有推荐项都是可点击的 B站 链接，并标注核验时间        |
 
@@ -34,6 +35,35 @@ metadata:
 - **弱词**（只在标题/UP主命中才丢）：`资料包 / 网盘 / 提取码`。放在简介里不丢——大量正经免费课把课件传网盘，一律枪毙会误伤，只打一个提示标签。
 
 脚本只查标题、UP 主名、简介正文——**不查你写的 note**，因为 note 里常有「简介没写章节」这类说明，会被自己误伤。
+
+## 两种模式
+
+同一批课件，两种人要的东西正好相反。开始干活前先定模式，因为它会改变**检索词**和**评分权重**。
+
+| | 全程网课 `full`（默认） | 突击网课 `crash` |
+|---|---|---|
+| 给谁 | 想从头系统学完这门课 | 考前/临时抱佛脚，只要框架和考点 |
+| 体量 | 只在标题看不出形态时参考：越长、集数越多越偏全程 | 同上，越短越偏突击 |
+| 检索词 | `完整版` `全集` `课堂录播` `系统课` `零基础` | `速成` `期末突击` `考前串讲` `3小时` `考点总结` `一节课过完` |
+| 覆盖 | **大部分章节覆盖即可**，不要求讲到课件最后一章 | **允许覆盖不全**，抓主干即可 |
+| 评分 | 标题含全程词 → +24 分；含突击词 → −24 分 | 反过来 |
+
+**判定顺序（权重从高到低，脚本按这个走）**
+
+1. 标题（含分P名）出现 `突击 / 速成 / 期末 / 考前 / 冲刺 / 串讲 / 考点 / 复习 / 救命 / 速通 / 浓缩 / 划重点 / 总结 / N小时` → **整条归到突击网课**，哪怕它有 40 小时
+2. 标题出现 `完整版 / 全集 / 全程 / 系统 / 课堂 / 录播 / 详解 / 逐章 / 配套教材 / 零基础` → **整条归到全程网课**，哪怕它只有 2 小时
+3. 标题两类都没有（或同时出现，视为矛盾）→ 才看体量：整门 ≥15 小时且集数 ≥20 偏全程，≤3 小时或 1 集偏突击；这项只影响 ±10 分，不足以翻盘
+
+一句话：**先看标题，标题说了算；标题没说，才用时长度量。**
+
+几条实现细节（`--mode` 传给 `align.py`，脚本算，不用你估）：
+
+- **只看标题，不看简介**。简介里常有「期末复习资料」「考点」这类无关表述，拿它判定会把整门系统课误判成突击课
+- 标题同时含两类词（如「期末精讲」）视为矛盾，退回体量判断
+- 体量 = `series.total_minutes`，没填则 `episodes × 单集时长`
+- 模式只影响排序分（关键词 ±24，体量 ±10），**不影响五道门禁**——B站、免费、完结、无广告、未删除，两种模式一样严
+
+怎么定模式：用户说「突击 / 速成 / 期末 / 考前 / 时间紧」→ `crash`；说「系统学 / 从头学 / 跟着学完」→ `full`；**没说就默认 `full`**，交付时补一句「如果只是想考前过一遍，我可以再出一版突击版」。
 
 ## 不做的事
 
@@ -94,11 +124,21 @@ python "$SKILL/scripts/materials.py" "<压缩包或文件夹>" --out "网课匹�
 
 **Stage A｜找合集（必做，且优先）**
 
-用域名限定把结果锁在 B站（`allowed_domains: ["bilibili.com"]`），检索式：
+用域名限定把结果锁在 B站（`allowed_domains: ["bilibili.com"]`）。检索式**按模式分两套**，别混着搜：
 
-- `{课程名} 完整版` / `{课程名} 全集` / `{课程名} 合集`
-- `{课程名} {学校}` / `{课程名} {教师}`
+**全程模式（`full`）**
+
+- `{课程名} 完整版` / `{课程名} 全集` / `{课程名} 课堂录播`
+- `{课程名} {学校}` / `{课程名} {教师}`（找同源正课）
 - `{教材名} 配套课程`
+
+**突击模式（`crash`）**
+
+- `{课程名} 速成` / `{课程名} 期末突击` / `{课程名} 考前串讲`
+- `{课程名} 3小时` / `{课程名} 一节课`
+- `{课程名} 考点总结` / `{课程名} 思维导图 讲解`
+
+突击模式下**多找几条短系列**再比：同一门课常有 2 小时、5 小时、8 小时三个版本，选结构与课件最接近的那一条，而不是最短的那条。
 
 对每个候选合集，打开播放列表页核实一次，填三个门禁字段：
 
@@ -107,6 +147,7 @@ python "$SKILL/scripts/materials.py" "<压缩包或文件夹>" --out "网课匹�
 | `free`     | 免费能看 → `true`；需付费/购课 → `false`；页面说「私信获取」「加群看完整版」→ 直接当广告丢弃；看不出来 → `null` |
 | `status`   | 最后一集能正常播放且无「未完待续」→ `complete`；明确「持续更新」→ `updating`；判断不了 → `unknown`     |
 | `episodes` | 分P数或合集集数，用于判断体量是否与课件相当                                                  |
+| `total_minutes` | 可选。整门总时长（分钟），合集页面上有就填；不填则用 `episodes × 单集时长` 估算。**突击模式下这个字段直接决定排序，值得花十秒填准** |
 
 **Stage B｜补专题片段（仅当某讲没有合格合集）**
 
@@ -162,10 +203,12 @@ python "$SKILL/scripts/probe.py" --candidates ".../candidates.json" --out ".../p
 ```bash
 python "$SKILL/scripts/align.py" --materials ".../materials.json" \
        --candidates ".../candidates.json" --probe ".../probe.json" \
-       --out ".../alignment.json"
+       --mode full --out ".../alignment.json"      # 突击版改成 --mode crash
 ```
 
-输出会打印两本台账：
+输出第一行会告诉你当前模式。**两种模式可以各出一份 HTML**（用不同文件名），让用户对比后自己选——这是最省事的“让用户自选”。
+
+输出还会打印两本台账：
 
 - **过滤台账**：广告 / 付费 / 未完结 / 非B站 / 低分各丢了几条。
 - **在播台账**：已删除、标题不符、无法核验各有几条，保留了多少条已核实可播。
@@ -201,6 +244,9 @@ python "$SKILL/scripts/write_html.py" ".../alignment.json" -o ".../网课对照�
 - [ ] 同一讲的多条候选按分数严格降序，且都带了「合集/片段」标签。
 - [ ] 没写任何未经页面核实的时间戳或集数。
 - [ ] 「未找到」的讲都给了具体替代方案，并说明是因为「没有」还是「有但已失效/付费」。
+- [ ] 模式对得上用户的话：说「突击/期末/考前」就跑的 `crash`，否则 `full`；两种都出了的话文件名区分清楚。
+- [ ] `full` 模式下首推的那个系列覆盖了**大部分**讲义（缺的几章能在报告里点名说明）；不要求讲到最后一章。
+- [ ] `crash` 模式下首推的是标题明确冲刺向的系列；别把 40 集的系统课当首推。
 
 ## 常见坑
 
@@ -214,6 +260,8 @@ python "$SKILL/scripts/write_html.py" ".../alignment.json" -o ".../网课对照�
 | 老 `.ppt` 抽不出文字 | 二进制格式          | 只能靠文件名；降低预期并告知用户                                     |
 | probe 大面积 `blocked` | 接口触发风控（-412/-352） | 隔几分钟重跑；或 `--allow-unverified` 保留并明确标注「在播未核验」          |
 | probe 报 `mismatch` 很多 | candidates 里的标题是凭印象写的 | 说明链接大概率编错，回搜索页重新取真实标题，别硬保留                           |
+| 突击模式里全是 40 集系统课 | 检索词用了「完整版」 | 换「速成 / 期末突击 / 考点总结」，并把 `total_minutes` 填准，让排序把它们压下去        |
+| 全程模式里混进 2 小时速通 | 体量估算缺失 | 给短系列补 `total_minutes`，或确认 `episodes` 是否填成了 1                              |
 
 ## 参考
 

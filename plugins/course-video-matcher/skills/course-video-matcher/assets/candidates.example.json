@@ -2,13 +2,14 @@
   "meta": {
     "platform_scope": "bilibili",
     "searched_at": "2026-11-13",
-    "note": "示例数据，链接均为真实 B站 稿件。s3 故意放一个不存在的 BV，用来演示「已删除/不可见」会被剔除；o2 的简介里有网盘提取码，用来演示弱信号只提示不误杀。",
+    "note": "示例数据，链接均为真实 B站 稿件。s3 故意放一个不存在的 BV，用来演示「已删除/不可见」会被剔除；o2 的简介里有网盘提取码，用来演示弱信号只提示不误杀。拿 `--mode crash` 再跑一遍，可以看到排序按「突击」口径重排。",
     "field_help": {
       "kind": "collection=完整合集/长系列；snippet=只讲一个知识点的单集",
       "status": "complete=已更新完；updating=还在更（会被丢弃）；unknown=判不出（保留但降级）",
       "free": "true=免费可看；false=付费/购课（会被丢弃）；null=没确认（保留但打标）",
       "evidence": "page=打开过播放列表页核实；snippet=只看到搜索摘要",
-      "llm_score": "你的语义判断，0-100，锚点见 references/scoring.md"
+      "llm_score": "你的语义判断，0-100，锚点见 references/scoring.md",
+      "total_minutes": "整门总时长（分钟）。不填则用 episodes × 单集时长 估算；突击模式下它直接决定排序"
     }
   },
   "courses": [
@@ -31,7 +32,8 @@
           "status": "complete",
           "free": true,
           "official": false,
-          "desc": "按章节顺序讲，第一章到第八章，共 34 个分P"
+          "desc": "按章节顺序讲，第一章到第八章，共 34 个分P",
+          "total_minutes": 1489
         },
         {
           "id": "s2",
@@ -43,7 +45,8 @@
           "status": "complete",
           "free": true,
           "official": false,
-          "desc": "期末突击向，每章先讲基础再讲配套习题"
+          "desc": "期末突击向，每章先讲基础再讲配套习题",
+          "total_minutes": 177
         },
         {
           "id": "s3",
@@ -55,14 +58,19 @@
           "status": "complete",
           "free": true,
           "official": false,
-          "desc": "这条 BV 已不存在，用来验证删除检测"
+          "desc": "这条 BV 已不存在，用来验证删除检测",
+          "total_minutes": 2400
         }
       ],
       "matches": [
         {
           "deck_name": "第1章 绪论.pptx",
           "lecture_label": "绪论 数据结构基本概念",
-          "topics": ["数据结构", "逻辑结构", "存储结构"],
+          "topics": [
+            "数据结构",
+            "逻辑结构",
+            "存储结构"
+          ],
           "picks": [
             {
               "series_id": "s1",
@@ -87,7 +95,11 @@
         {
           "deck_name": "第2章 线性表.pptx",
           "lecture_label": "线性表 顺序表 链表",
-          "topics": ["线性表", "顺序表", "链表"],
+          "topics": [
+            "线性表",
+            "顺序表",
+            "链表"
+          ],
           "picks": [
             {
               "series_id": "s1",
@@ -102,7 +114,12 @@
         {
           "deck_name": "第3章 栈和队列.pptx",
           "lecture_label": "栈和队列",
-          "topics": ["栈", "队列", "LIFO", "FIFO"],
+          "topics": [
+            "栈",
+            "队列",
+            "LIFO",
+            "FIFO"
+          ],
           "picks": [
             {
               "series_id": "s1",
@@ -118,7 +135,11 @@
         {
           "deck_name": "第4章 串.pptx",
           "lecture_label": "串 模式匹配 KMP",
-          "topics": ["串", "KMP", "模式匹配"],
+          "topics": [
+            "串",
+            "KMP",
+            "模式匹配"
+          ],
           "picks": [
             {
               "series_id": "s3",
@@ -153,7 +174,8 @@
           "status": "complete",
           "free": true,
           "official": false,
-          "desc": "去年的课程免费公开，共 6 个分P，11 小时"
+          "desc": "去年的课程免费公开，共 6 个分P，11 小时",
+          "total_minutes": 660
         },
         {
           "id": "o2",
@@ -165,14 +187,19 @@
           "status": "complete",
           "free": true,
           "official": false,
-          "desc": "配套讲义下载如下 链接: https://pan.baidu.com/s/xxxx 提取码:abcd"
+          "desc": "配套讲义下载如下 链接: https://pan.baidu.com/s/xxxx 提取码:abcd",
+          "total_minutes": 303
         }
       ],
       "matches": [
         {
           "deck_name": "第1讲 操作系统引论.pptx",
           "lecture_label": "操作系统引论 目标与作用",
-          "topics": ["操作系统", "引论", "目标"],
+          "topics": [
+            "操作系统",
+            "引论",
+            "目标"
+          ],
           "picks": [
             {
               "series_id": "o1",
@@ -196,7 +223,12 @@
         {
           "deck_name": "第2讲 进程管理.pptx",
           "lecture_label": "进程管理 进程 线程 调度",
-          "topics": ["进程", "线程", "调度", "PCB"],
+          "topics": [
+            "进程",
+            "线程",
+            "调度",
+            "PCB"
+          ],
           "picks": [
             {
               "series_id": "o1",
@@ -211,7 +243,12 @@
         {
           "deck_name": "第3讲 内存管理.pptx",
           "lecture_label": "内存管理 分页 分段 虚拟内存",
-          "topics": ["内存管理", "分页", "分段", "虚拟内存"],
+          "topics": [
+            "内存管理",
+            "分页",
+            "分段",
+            "虚拟内存"
+          ],
           "picks": [
             {
               "series_id": "o1",
